@@ -351,6 +351,30 @@ class Kasse(object):
         cur.execute("CREATE INDEX IF NOT EXISTS statistikDateIndex ON statistik(datum)")
         cur.execute("CREATE INDEX IF NOT EXISTS statistikRechnungIndex ON statistik(rechnung)")
 
+        # triggers for a database of last modifications
+
+        # TODO use lambdas or something similar
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS modifications (table_name TEXT NOT NULL PRIMARY KEY ON CONFLICT REPLACE, action TEXT NOT NULL, changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS buchung_ondelete AFTER DELETE ON buchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('buchung', 'DELETE'); END;")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS buchung_onupdate AFTER UPDATE ON buchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('buchung', 'UPDATE'); END;")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS buchung_oninsert AFTER INSERT ON buchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('buchung', 'INSERT'); END;")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS kundenbuchung_ondelete AFTER DELETE ON kundenbuchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('kundenbuchung', 'DELETE'); END;")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS kundenbuchung_onupdate AFTER UPDATE ON kundenbuchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('kundenbuchung', 'UPDATE'); END;")
+
+        cur.execute(
+            "CREATE TRIGGER IF NOT EXISTS kundenbuchung_oninsert AFTER INSERT ON kundenbuchung BEGIN INSERT INTO modifications (table_name, action) VALUES ('kundenbuchung', 'INSERT'); END;")
+
     @staticmethod
     def _date_query_generator(from_table=None, from_date=None, until_date=None):
         """
